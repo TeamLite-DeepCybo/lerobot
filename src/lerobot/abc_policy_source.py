@@ -11,6 +11,17 @@ LeRobot 的部署链路是 ``PolicyServer（gRPC/pickle）↔ RobotClient（本�
 
 本模块只做"队列 → ActionPacket"的转换与契约声明，不重写 gRPC、不改服务器，
 也不在控制线程里等网络：``take_chunk`` 必须是非阻塞的。
+
+单位要求（SI，重要）
+--------------------
+本适配**不做任何单位换算**，上游必须已经按 SI 输出：
+
+* 臂关节：``rad``
+* 夹爪：``m``（prismatic 行程，Lite 为 0~0.047 m）
+
+如果训练数据集仍按"夹爪归一化开度 0..1"录制，请在**服务器侧或上游**转换成米，
+不要在这一层偷偷换算——契约里写的是物理量，读者据此判断量级；隐藏换算会让
+"模型输出的 0.5" 与 "下发的 0.5 m" 混为一谈。
 """
 
 from __future__ import annotations
@@ -43,7 +54,11 @@ def joint_schema_from_names(
 
     LeRobot 的动作张量是按 ``robot.action_features`` 顺序排列的（见
     ``RobotClient._action_tensor_to_action_dict``），所以这里必须**照抄顺序**，
-    不能重排；夹爪维度按名称识别为 SI 米。
+    不能重排。
+
+    单位要求（SI）：臂关节 ``rad``、夹爪 ``m``。本函数只**声明**单位，
+    **不做换算**——夹爪若在数据集里是 0..1 归一化开度，必须在上游/服务器侧
+    转成米后再进入本层。
     """
     if not names:
         raise ContractError("action_features 为空，无法生成动作契约")

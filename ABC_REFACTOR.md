@@ -72,9 +72,10 @@ loop = ControlLoop(sink, SourceArbiter(policy=source, clock=clock), clock=clock)
 
 ## 还没做的 / 需要确认
 
-1. **单位**：契约固定 SI（夹爪米）。LeRobot 数据集若仍按归一化开度录制，需要像 PI05
-   那样加一次换算（`units_patch` 同款）；本分支没有猜，等数据集口径确定后加在
-   `actions_to_matrix` 之后。
+1. **单位（已用备注写明要求）**：契约固定 SI —— 臂 `rad`、夹爪 `m`；
+   `src/lerobot/abc_policy_source.py` 的模块 docstring 与 `joint_schema_from_names()`
+   都写明了这条要求，并明确**本层不做换算**。若数据集仍是"夹爪归一化开度 0..1"，
+   转换请放在服务器侧或上游（与 PI05 的 `norm2si` 同理），不要藏在下发层。
 2. **观测上行**：仍是 `RobotClient.control_loop_observation()`（相机 + 关节 → `TimedObservation`），
    未纳入抽象层；与"16 维 joint_states 由谁发布"这条未决项一起处理。
 3. **`aggregate_fn` 的语义**：客户端会把新旧块按 timestep 聚合（默认加权平均）。
